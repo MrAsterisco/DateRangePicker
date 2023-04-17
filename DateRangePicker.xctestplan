@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "F6C68249-2213-4EB1-8FCE-517397C1F066",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DateRangePickerTests",
+        "name" : "DateRangePickerTests"
+      }
+    }
+  ],
+  "version" : 1
+}

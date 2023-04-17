@@ -74,17 +74,69 @@ final class DatesGeneratorTests: XCTestCase {
     let datesGenerator = DatesGenerator(calendar: calendar)
     
     // WHEN
-    let dates = datesGenerator.months(in: year)
+    let dates = datesGenerator.months(in: year, minimumDate: nil, maximumDate: nil)
     
     // THEN
     XCTAssertEqual(yearDates, dates)
   }
-}
-
-private extension Date {
-  static func date(from dateString: String) -> Date {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    return formatter.date(from: dateString)!
+  
+  func testGenerateWithLimits_1993() {
+    // GIVEN
+    let year = 1993
+    let minimumMonth = 3
+    let maximumMonth = 10
+    let yearDates = (minimumMonth..<maximumMonth)
+      .map { Date.date(from: "\(year)-\($0)-01") }
+    let minimumDate = Date.date(from: "\(year)-\(minimumMonth)-01")
+    let maximumDate = Date.date(from: "\(year)-\(maximumMonth)-01")
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.locale = Locale(identifier: "en-US")
+    
+    let datesGenerator = DatesGenerator(calendar: calendar)
+    
+    // WHEN
+    let dates = datesGenerator.months(in: year, minimumDate: minimumDate, maximumDate: maximumDate)
+    
+    // THEN
+    XCTAssertEqual(yearDates, dates)
+  }
+  
+  func testGenerateWithLimits_1993_1994() {
+    // GIVEN
+    let year = 1993
+    let minimumDate = Date.date(from: "1993-10-01")
+    let maximumDate = Date.date(from: "1994-11-11")
+    let yearDates = (10...12)
+      .map { Date.date(from: "\(year)-\($0)-01") }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.locale = Locale(identifier: "en-US")
+    
+    let datesGenerator = DatesGenerator(calendar: calendar)
+    
+    // WHEN
+    let dates = datesGenerator.months(in: year, minimumDate: minimumDate, maximumDate: maximumDate)
+    
+    // THEN
+    XCTAssertEqual(yearDates, dates)
+  }
+  
+  func testGenerateYears_CustomValues() {
+    // GIVEN
+    let minimumYear = 1993
+    let maximumYear = 2050
+    let minimumDate = Date.date(from: "\(minimumYear)-01-01")
+    let maximumDate = Date.date(from: "\(maximumYear)-01-01")
+    let yearDates = (minimumYear..<maximumYear)
+      .map { Date.date(from: "\($0)-01-01") }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.locale = Locale(identifier: "en-US")
+    
+    let datesGenerator = DatesGenerator(calendar: calendar)
+    
+    // WHEN
+    let dates = datesGenerator.years(minimumDate: minimumDate, maximumDate: maximumDate)
+    
+    // THEN
+    XCTAssertEqual(dates, yearDates)
   }
 }

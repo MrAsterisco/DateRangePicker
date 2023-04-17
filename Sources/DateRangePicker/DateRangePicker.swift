@@ -7,39 +7,65 @@
 
 import SwiftUI
 
+/// A control for selecting a range of dates in a given interval.
+/// 
+/// # Overview
+/// Use a `DateRangePicker` to select a range of dates in a given interval. The control
+/// mimics the native date picker, and does not allow for much customization.
+/// This control can also be used to select a single date, as it will produce an `OpenDateInterval` with
+/// just a `start` date.
+/// 
+/// # Style
+/// The date range picker always uses the calendar style. This style cannot be customized or changed.
 public struct DateRangePicker: View {
   enum Mode {
     case  calendar,
           picker
   }
   
-  static let numberOfDaysInWeek = 7
+  let calendar: Calendar
+  let minimumDate: Date?
+  let maximumDate: Date?
   
-  @Binding var month: Int
-  @Binding var year: Int
-  @Binding var selection: ClosedRange<Date>?
+  private let datesGenerator: DatesGenerator
+  private let dateValidator: DateValidator
+  private let selectionManager: SelectionManager
+  
+  @Binding var visibleMonth: Int
+  @Binding var visibleYear: Int
+  @Binding var selection: OpenDateInterval?
   
   @State private var months = [Date]()
   @State private var years = [Date]()
   @State private var dates = [Date]()
   @State private var mode = Mode.calendar
   
-  @State private var startDate: Date?
-  
-  let calendar: Calendar
-  private let datesGenerator: DatesGenerator
-  
-  init(
+  public init(
     calendar: Calendar = .autoupdatingCurrent,
     month: Binding<Int>,
     year: Binding<Int>,
-    selection: Binding<ClosedRange<Date>?>
+    selection: Binding<OpenDateInterval?>,
+    minimumDate: Date? = nil,
+    maximumDate: Date? = nil
   ) {
     self.calendar = calendar
-    datesGenerator = .init(calendar: calendar)
-    self._month = month
-    self._year = year
+    self._visibleMonth = month
+    self._visibleYear = year
     self._selection = selection
+    self.minimumDate = minimumDate
+    self.maximumDate = maximumDate
+    
+    datesGenerator = .init(
+      calendar: calendar
+    )
+    dateValidator = .init(
+      calendar: calendar,
+      minimumDate: minimumDate,
+      maximumDate: maximumDate
+    )
+    selectionManager = .init(
+      calendar: calendar
+    )
   }
   
   public var body: some View {
@@ -50,233 +76,207 @@ public struct DateRangePicker: View {
             Text(formattedMonthYear)
               .foregroundColor(mode == .picker ? .accentColor : .primary)
               .bold()
-            
+
             Image(systemName: "chevron.right")
               .imageScale(.small)
               .rotationEffect(mode == .picker ? Angle(degrees: 90) : Angle(degrees: 0))
           }
         }
         .padding([.leading])
-        
+
         Spacer()
-        
+
         HStack(spacing: 20) {
           Button(action: { increaseMonth(by: -1) }) {
             Image(systemName: "chevron.left")
               .imageScale(.large)
           }
-          
+          .disabled(!canGoToMonth(fromCurrentMonth: visibleMonth, inCurrentYear: visibleYear, byIncreasing: -1))
+
           Button(action: { increaseMonth(by: 1) }) {
             Image(systemName: "chevron.right")
               .imageScale(.large)
           }
+          .disabled(!canGoToMonth(fromCurrentMonth: visibleMonth, inCurrentYear: visibleYear, byIncreasing: 1))
         }
         .padding(.trailing)
       }
       .padding(.bottom)
-      .frame(maxWidth: .infinity, alignment: .leading)
       
       switch mode {
       case .calendar:
-        HStack(spacing: 0) {
-          ForEach(calendar.orderedShortWeekdaySymbols, id: \.self) { weekday in
-            Text(weekday.uppercased())
-              .foregroundColor(.secondary)
-              .font(.subheadline)
-              .bold()
-              .frame(maxWidth: .infinity, alignment: .center)
-          }
-        }
-        .padding([.leading, .trailing], 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        
-        LazyVGrid(
-          columns: Array(repeating: GridItem(.flexible()), count: Self.numberOfDaysInWeek),
-          alignment: .center,
-          spacing: 12
-        ) {
-          ForEach($dates, id: \.self) { $date in
-            if isDateValid(date) {
-              Button(action: { select(date: date) }) {
-                let isDateSelected = isDateSelected(date)
-                let useAccent = isToday(date) || isDateSelected
-                
-                Text(date.formattedDay ?? "")
-                  .foregroundColor(useAccent ? .accentColor : .primary)
-                  .fontWeight(isDateSelected ? .bold : .regular)
-                  .padding([.top, .bottom], 8)
-                  .padding([.leading, .trailing], 8)
-                  .background(isDateSelected ? Color.accentColor.opacity(0.1) : .clear)
-                  .cornerRadius(8)
-              }
-            } else {
-              Text(date.formattedDay ?? "")
-                .hidden()
+        VStack {
+          HStack(spacing: 0) {
+            ForEach(calendar.orderedShortWeekdaySymbols, id: \.self) { weekday in
+              Text(weekday.uppercased())
+                .foregroundColor(.secondary)
+                .font(.subheadline)
+                .bold()
+                .frame(maxWidth: .infinity, alignment: .center)
             }
           }
-        }
-        .padding([.leading, .trailing], 12)
-        .onAppear {
-          generateVisibleMonth(month, year: year)
-          generateMonths(in: year)
-          generateYears()
-        }
-        .onChange(of: month) { newValue in
-          generateVisibleMonth(newValue, year: year)
-        }
-        .onChange(of: year) { newValue in
-          generateVisibleMonth(month, year: newValue)
-          generateMonths(in: newValue)
+          .padding([.leading, .trailing], 6)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          
+          DateGridView(
+            calendar: calendar,
+            dates: dates,
+            dateValidator: isDateValid(_:),
+            selectionProvider: isDateSelected(_:),
+            selectionHandler: select(date:)
+          )
+          .gesture(
+            DragGesture()
+              .onEnded { value in
+                if value.translation.width > 0 {
+                  increaseMonth(by: -1)
+                } else {
+                  increaseMonth(by: 1)
+                }
+              }
+          )
         }
       case .picker:
-        HStack(spacing: 0) {
-          Picker("", selection: $month) {
-            ForEach($months, id: \.self) { $monthDate in
-              Text(monthDate.formattedMonth ?? "")
-                .tag(monthDate.monthComponent(in: calendar))
-            }
-          }
-          .pickerStyle(.wheel)
-          
-          Picker("", selection: $year) {
-            ForEach($years, id: \.self) { $yearDate in
-              Text(yearDate.formattedYear ?? "")
-                .tag(yearDate.yearComponent(in: calendar))
-            }
-          }
-          .pickerStyle(.wheel)
-        }
+        MonthYearPickerView(
+          calendar: calendar,
+          months: $months,
+          years: $years,
+          selectedMonth: $visibleMonth,
+          selectedYear: $visibleYear
+        )
         .padding([.leading, .trailing], 6)
       }
     }
+    .onAppear {
+      generateVisibleMonth(visibleMonth, year: visibleYear)
+      generateMonths(in: visibleYear)
+      generateYears()
+    }
+    .onChange(of: visibleMonth) { newValue in
+      generateVisibleMonth(newValue, year: visibleYear)
+    }
+    .onChange(of: visibleYear) { newValue in
+      generateVisibleMonth(visibleMonth, year: newValue)
+      generateMonths(in: newValue)
+      
+      if let firstAvailableMonth = months.first {
+        visibleMonth = calendar.component(.month, from: firstAvailableMonth)
+      }
+    }
+  }
+}
+
+// MARK: - Data Generation
+private extension DateRangePicker {
+  func generateMonths(in year: Int) {
+    months = datesGenerator.months(
+      in: year,
+      minimumDate: minimumDate,
+      maximumDate: maximumDate
+    )
+  }
+  
+  func generateYears() {
+    years = datesGenerator.years(
+      minimumDate: minimumDate,
+      maximumDate: maximumDate
+    )
+  }
+  
+  func generateVisibleMonth(_ month: Int, year: Int) {
+    dates = datesGenerator.dates(in: month, of: year)
   }
 }
 
 // MARK: - Logic
 private extension DateRangePicker {
   func select(date: Date) {
-    if startDate == nil {
-      startDate = date
-      return
-    }
-    
-    if let startDate, selection == nil {
-      if date < startDate {
-        self.startDate = date
-        return
-      }
-      selection = startDate...date
-      return
-    }
-    
-    if selection != nil {
-      startDate = nil
-      selection = nil
-      return select(date: date)
-    }
+    selection = selectionManager.append(
+      date,
+      to: selection
+    )
   }
   
   func toggleMode() {
     mode = (mode == .calendar ? .picker: .calendar)
   }
   
-  func increaseMonth(by value: Int) {
-    let dateComponents = DateComponents(year: year, month: month)
+  func month(byIncreasingMonth currentMonth: Int, inYear currentYear: Int, by value: Int) -> Date? {
     guard
-      let displayedDate = calendar.date(from: dateComponents),
-      let nextMonth = calendar.date(byAdding: .month, value: value, to: displayedDate)
+      let date = date(fromYear: currentYear, month: currentMonth)
+    else { return nil }
+    
+    return calendar.date(
+      byAdding: .month,
+      value: value,
+      to: date
+    )
+  }
+  
+  func canGoToMonth(fromCurrentMonth currentMonth: Int, inCurrentYear currentYear: Int, byIncreasing value: Int) -> Bool {
+    guard
+      let nextMonth = month(byIncreasingMonth: currentYear, inYear: currentYear, by: value)
+    else { return false }
+    
+    if let minimumDate, nextMonth < minimumDate {
+      return calendar.isDate(minimumDate, equalTo: nextMonth, toGranularity: .month)
+    }
+    
+    if let maximumDate, nextMonth > maximumDate {
+      return calendar.isDate(maximumDate, equalTo: nextMonth, toGranularity: .month)
+    }
+    
+    return true
+  }
+  
+  func increaseMonth(by value: Int) {
+    guard
+      let nextMonth = month(byIncreasingMonth: visibleMonth, inYear: visibleYear, by: value)
     else { return }
     
-    let newComponents = calendar.dateComponents([.month, .year], from: nextMonth)
+    let newComponents = calendar.dateComponents(
+      [.month, .year],
+      from: nextMonth
+    )
     
     guard
       let newYear = newComponents.year,
       let newMonth = newComponents.month
     else { return }
     
-    year = newYear
-    month = newMonth
+    visibleYear = newYear
+    visibleMonth = newMonth
   }
   
-  func generateMonths(in year: Int) {
-    months = datesGenerator.months(in: year)
-  }
-  
-  func generateYears() {
-    years = datesGenerator.years()
-  }
-  
-  func generateVisibleMonth(_ month: Int, year: Int) {
-    dates = datesGenerator.dates(in: month, of: year)
-  }
-  
-  func isDateValid(_ date: Date) -> Bool {
-    let dateComponents = DateComponents(year: year, month: month)
+  func isDateValid(_ date: Date) -> DateValidity {
     guard
-      let displayedDate = calendar.date(from: dateComponents)
-    else { return false }
+      let visibleDate
+    else { return .hidden }
     
-    return calendar.isDate(date, equalTo: displayedDate, toGranularity: .month)
-  }
-  
-  func isToday(_ date: Date) -> Bool {
-    calendar.isDateInToday(date)
+    return dateValidator.validate(date: date, in: visibleDate)
   }
   
   func isDateSelected(_ date: Date) -> Bool {
-    if let selection, selection.contains(date) {
-      return true
-    }
-    
-    return startDate == date
+    selection?.contains(date) == true
+  }
+  
+  func date(fromYear year: Int, month: Int) -> Date? {
+    let dateComponents = DateComponents(year: visibleYear, month: visibleMonth)
+    return calendar.date(from: dateComponents)
+  }
+  
+  var visibleDate: Date? {
+    date(fromYear: visibleYear, month: visibleMonth)
   }
   
   var formattedMonthYear: String {
-    let components = DateComponents(year: year, month: month)
     guard
-      let date = calendar.date(from: components)
+      let visibleDate
     else { return "" }
     
     let formatter = DateFormatter()
     formatter.dateFormat = "MMMM YYYY"
-    return formatter.string(from: date)
-  }
-}
-
-private extension Date {
-  var formattedDay: String? {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "dd"
-    return formatter.string(from: self)
-  }
-  
-  var formattedMonth: String? {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "MMMM"
-    return formatter.string(from: self)
-  }
-  
-  var formattedYear: String? {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "YYYY"
-    return formatter.string(from: self)
-  }
-  
-  func monthComponent(in calendar: Calendar) -> Int {
-    calendar.component(.month, from: self)
-  }
-  
-  func yearComponent(in calendar: Calendar) -> Int {
-    calendar.component(.year, from: self)
-  }
-}
-
-extension Calendar {
-  var orderedShortWeekdaySymbols: [String] {
-    (Array(firstWeekday...7) + Array(1..<firstWeekday))
-      .map {
-        shortWeekdaySymbols[$0-1]
-      }
+    return formatter.string(from: visibleDate)
   }
 }
 
@@ -285,23 +285,44 @@ struct DateRangePicker_Previews: PreviewProvider {
   private struct Preview: View {
     let calendar: Calendar
     
-    @State private var month = 04
+    @State private var month = 09
     @State private var year = 2023
-    @State private var range: ClosedRange<Date>?
+    @State private var range: OpenDateInterval?
+    
+    private var dateFormatter: DateFormatter {
+      let dateFormatter = DateFormatter()
+      dateFormatter.dateStyle = .short
+      dateFormatter.timeStyle = .short
+      return dateFormatter
+    }
     
     var body: some View {
-      DateRangePicker(
-        calendar: calendar,
-        month: $month,
-        year: $year,
-        selection: $range
-      )
+      VStack(spacing: 20) {
+//        if let range, let end = range.end {
+//          Text("\(dateFormatter.string(from: range.start)) -> \(dateFormatter.string(from: end)) - \(Int(ceil(range.duration/86_400))) days")
+//            .font(.callout)
+//            .padding()
+//            .multilineTextAlignment(.center)
+//        }
+        
+        DateRangePicker(
+          calendar: calendar,
+          month: $month,
+          year: $year,
+          selection: $range,
+          minimumDate: Date.date(from: "2023-09-05"),
+          maximumDate: Date.date(from: "2024-11-21")
+        )
+      }
     }
   }
   
   static var previews: some View {
-    VStack {
-      DatePicker("", selection: .constant(Date(timeIntervalSince1970: 0)))
+    Group {
+      Preview(
+        calendar: Calendar.gregorianEnglish
+      )
+      .previewDisplayName("Gregorian - English")
       
       Preview(
         calendar: Calendar.gregorianItalian
