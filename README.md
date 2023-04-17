@@ -1,7 +1,7 @@
 # DateRangePicker
 DateRangePicker is a SwiftUI view that allows users to select a range of dates from a calendar in a given interval.
 
-![DateRangePicker](images/hero.png)
+<img src="images/hero.png" width="475" />
 
 ## Installation
 DateRangePicker is available through [Swift Package Manager](https://swift.org/package-manager).
