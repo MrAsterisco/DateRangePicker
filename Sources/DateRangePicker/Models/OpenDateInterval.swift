@@ -85,6 +85,8 @@ public struct OpenDateInterval {
   }
 }
 
+extension OpenDateInterval: Equatable { }
+
 extension OpenDateInterval: CustomDebugStringConvertible {
   public var debugDescription: String {
     var debugString = "[\(start)"
