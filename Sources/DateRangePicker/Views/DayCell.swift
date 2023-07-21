@@ -23,6 +23,7 @@ struct DayCell: View {
         Circle()
           .foregroundColor(isSelected ? Color.accentColor.opacity(0.1) : .clear)
       }
+      .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
   }
 }
 

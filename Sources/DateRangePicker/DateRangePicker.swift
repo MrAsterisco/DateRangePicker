@@ -76,10 +76,12 @@ public struct DateRangePicker: View {
             Text(formattedMonthYear)
               .foregroundColor(mode == .picker ? .accentColor : .primary)
               .bold()
+              .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
             Image(systemName: "chevron.right")
               .imageScale(.small)
               .rotationEffect(mode == .picker ? Angle(degrees: 90) : Angle(degrees: 0))
+              .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
           }
         }
         .padding([.leading])
@@ -90,12 +92,14 @@ public struct DateRangePicker: View {
           Button(action: { increaseMonth(by: -1) }) {
             Image(systemName: "chevron.left")
               .imageScale(.large)
+              .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
           }
           .disabled(!canGoToMonth(fromCurrentMonth: visibleMonth, inCurrentYear: visibleYear, byIncreasing: -1))
 
           Button(action: { increaseMonth(by: 1) }) {
             Image(systemName: "chevron.right")
               .imageScale(.large)
+              .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
           }
           .disabled(!canGoToMonth(fromCurrentMonth: visibleMonth, inCurrentYear: visibleYear, byIncreasing: 1))
         }
@@ -113,6 +117,7 @@ public struct DateRangePicker: View {
                 .font(.subheadline)
                 .bold()
                 .frame(maxWidth: .infinity, alignment: .center)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             }
           }
           .padding([.leading, .trailing], 6)
