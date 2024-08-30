@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import OpenDateInterval
 
 /// A control for selecting a range of dates in a given interval.
 /// 
@@ -303,14 +304,7 @@ struct DateRangePicker_Previews: PreviewProvider {
     
     var body: some View {
       VStack(spacing: 20) {
-//        if let range, let end = range.end {
-//          Text("\(dateFormatter.string(from: range.start)) -> \(dateFormatter.string(from: end)) - \(Int(ceil(range.duration/86_400))) days")
-//            .font(.callout)
-//            .padding()
-//            .multilineTextAlignment(.center)
-//        }
-        
-        DateRangePicker(
+				DateRangePicker(
           calendar: calendar,
           month: $month,
           year: $year,
@@ -349,4 +343,10 @@ private extension Calendar {
     calendar.locale = Locale(identifier: "it-IT")
     return calendar
   }
+	
+	static var chinese: Calendar {
+		var calendar = Calendar(identifier: .chinese)
+		calendar.locale = Locale(identifier: "zh-Hans")
+		return calendar
+	}
 }

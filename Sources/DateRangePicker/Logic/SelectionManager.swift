@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OpenDateInterval
 
 /// Manage an open-ended date interval by appending or replacing dates in it.
 final class SelectionManager {

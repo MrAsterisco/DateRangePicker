@@ -8,6 +8,7 @@
 import Foundation
 import XCTest
 @testable import DateRangePicker
+import OpenDateInterval
 
 final class SelectionManagerTests: XCTestCase {
   func testAppendFirstDate_CreatesOpenEndedInterval() {

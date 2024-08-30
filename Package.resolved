@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "opendateinterval",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MrAsterisco/OpenDateInterval",
+      "state" : {
+        "revision" : "acf88f98adae4ef2f7040d3fcc23685b094b219b",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 2
+}

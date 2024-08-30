@@ -11,11 +11,13 @@ let package = Package(
             name: "DateRangePicker",
             targets: ["DateRangePicker"]),
     ],
-    dependencies: [],
+    dependencies: [
+			.package(url: "https://github.com/MrAsterisco/OpenDateInterval", .upToNextMajor(from: "1.0.0"))
+		],
     targets: [
         .target(
             name: "DateRangePicker",
-            dependencies: []),
+            dependencies: ["OpenDateInterval"]),
         .testTarget(
             name: "DateRangePickerTests",
             dependencies: ["DateRangePicker"]),

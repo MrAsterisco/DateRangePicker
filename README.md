@@ -1,5 +1,7 @@
 # DateRangePicker
-DateRangePicker is a SwiftUI view that allows users to select a range of dates from a calendar in a given interval.
+DateRangePicker is a SwiftUI view that allows users to select a range of dates from a Gregorian calendar in a given interval.
+
+> DateRangePicker is not currently compatible with calendars other than the Gregorian calendar. If you need support for other calendars, please open an issue or a pull request.
 
 <img src="images/hero.png" width="275" /><img src="images/hero2.png" width="275" />
 
@@ -25,7 +27,7 @@ DateRangePicker(
   maximumDate: <any date> // The maximum date that can be selected (optional).
 )
 ```
-The DateRangePicker selection is represented by an `OpenDateInterval` struct, which is a freely-inspared version of a `DateInterval` that allows for open-ended intervals (aka. intervals that do not have an end date).
+The DateRangePicker selection is represented by an instance of [`OpenDateInterval`](https://github.com/MrAsterisco/OpenDateInterval).
 
 ## Compatibility
 ComboPicker requires **iOS 15.0 or later**.
