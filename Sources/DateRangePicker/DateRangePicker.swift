@@ -56,9 +56,9 @@ public struct DateRangePicker: View {
 		self._visibleMonth = month
 		self._visibleYear = year
 		self._selection = selection
-		self.minimumDate = minimumDate
-		self.maximumDate = maximumDate
-		
+        self.minimumDate = minimumDate
+        self.maximumDate = .maxDate(min: minimumDate, max: maximumDate)
+        
 		datesGenerator = .init(
 			calendar: calendar
 		)
