@@ -56,9 +56,9 @@ public struct DateRangePicker: View {
 		self._visibleMonth = month
 		self._visibleYear = year
 		self._selection = selection
-		self.minimumDate = minimumDate
-		self.maximumDate = maximumDate
-		
+        self.minimumDate = minimumDate
+        self.maximumDate = maximumDate
+        
 		datesGenerator = .init(
 			calendar: calendar
 		)
@@ -225,7 +225,7 @@ private extension DateRangePicker {
 	
 	func canGoToMonth(fromCurrentMonth currentMonth: Int, inCurrentYear currentYear: Int, byIncreasing value: Int) -> Bool {
 		guard
-			let nextMonth = month(byIncreasingMonth: currentYear, inYear: currentYear, by: value)
+			let nextMonth = month(byIncreasingMonth: currentMonth, inYear: currentYear, by: value)
 		else { return false }
 		
 		if let minimumDate, nextMonth < minimumDate {

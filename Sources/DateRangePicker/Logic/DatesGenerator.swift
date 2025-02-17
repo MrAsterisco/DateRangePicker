@@ -136,6 +136,10 @@ private extension DateInterval {
 			end = min(maximumDate, end)
 		}
 		
+        if start > end {
+            preconditionFailure("start date must be before end date", file: #file, line: #line)
+        }
+        
 		return Self.init(start: start, end: end)
 	}
 }
